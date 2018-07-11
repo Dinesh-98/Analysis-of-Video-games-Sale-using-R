@@ -1,0 +1,281 @@
+---
+title: "Video Game Analysis"
+author: "Dinesh"
+date: "January 3, 2018"
+output: html_document
+---
+
+
+[//]: # (Project Title   : Video Game Analysis
+         Name            : Dinesh S
+         Email           : sethudinesh1998@gmail.com
+         College/Company : SSN College of Engineering
+        )
+My project contains a list of video games and sales data are analysed for more than 16,500 games. It also predicts in which year the video game was released, the publisher name and the global sales of the video game.
+
+#Setting working directory
+```{r}
+setwd("C:/Users/Dinesh/MyFolder")
+getwd()
+```
+
+#Reading the dataset and visualizing the length and breadth of the dataset
+```{r}
+video.df <- read.csv(paste("vgsales.csv", sep=""))
+View(video.df)
+dim(video.df)
+```
+
+#Descriptive statistics of each variable
+```{r}
+library(psych)
+describe(video.df)
+```
+
+#To find factors in the dataset
+```{r}
+str(video.df)
+```
+From the above output, the categorical variables are Name, Platform, Year, Genre and Publisher.
+
+#Total Sales in a year for video game
+```{r}
+tot <- aggregate(video.df$Global_Sales, by=list(Year=video.df$Year), sum)
+tot
+```
+
+#Finding in which year, maximum and minimum global sale occured
+#Maximum global sales
+```{r}
+a <- max(tot$x)
+maxsales <- tot$Year[tot$x==a]
+maxsales
+```
+From the above output, we can conclude that the maximum global sales occured in the year 2008.
+
+#Minimum global sales
+```{r}
+a <- min(tot$x)
+maxsales1 <- tot$Year[tot$x==a]
+maxsales1
+```
+From the above output, we can conclude that the minimum global sales occured in the year 2017. 
+
+#Global Sales for specific genre
+```{r}
+tots <- aggregate(video.df$Global_Sales, by=list(Genre=video.df$Genre), sum)
+tots
+```
+
+#One way contingency table - for Genre
+```{r}
+mytable <- with(video.df, table(Genre))
+mytable
+```
+
+#Percentages for the above one way contingency table
+```{r}
+mytable <- with(video.df, table(Genre))
+prop.table(mytable)*100
+```
+
+#One way contingency table - for Publisher
+```{r}
+mytable <- with(video.df, table(Platform))
+margin.table(mytable,1)
+```
+
+#Two way contingency table for year vs genre
+```{r}
+mytable <- xtabs(~Year+Genre, data=video.df)
+margin.table(mytable,1)
+```
+
+#Chi-squared test for sales in northamerica vs.europe
+```{r}
+mytable <- xtabs(~NA_Sales + EU_Sales, data=video.df)
+mytable1 <- margin.table(mytable,1)
+chisq.test(mytable1)
+```
+Here p-value is less than 0.05. Therefore we reject the null hypothesis and conclude that they are independent
+
+#Fisher's exact test for sales in Japan vs. others
+#Fisher's exact test - An alternate test to chi-squared test when the sample size is small
+```{r}
+mytable <- xtabs(~JP_Sales + Other_Sales, data=video.df)
+mytable1 <- margin.table(mytable,1)
+chisq.test(mytable1)
+```
+Here p-value is less than 0.05. Therefore we reject the null hypothesis and conclude that they are independent
+
+#Two way contingency table for publisher vs genre
+```{r}
+mytable <- xtabs(~Publisher+Genre, data=video.df)
+head(mytable)
+```
+
+
+#Boxplot for sales in North America (NA_Sales)
+```{r}
+boxplot(video.df$NA_Sales, main="Sales in North America", xlab="Sales", ylab="frequency", horizontal = TRUE)
+```
+
+#Boxplot for sales in europe vs japan
+```{r}
+boxplot(video.df$EU_Sales ~ video.df$JP_Sales, horizontal=TRUE, xlab="European sales", ylab="Japan sales", main="Europe vs Japan sales", las=1)
+```
+
+#Histogram for Global sales
+```{r}
+hist(video.df$Global_Sales, main="Global sales", xlab="overall sales", ylab="frequency", breaks=3, col="darkblue", freq=FALSE)
+lines(density(video.df$Global_Sales, bw=8), type="l", col="darkred", lwd=2)
+```
+
+#plotting north america sales vs europe sales
+```{r}
+plot(video.df$NA_Sales, video.df$EU_Sales, col="blue", main="NorthAmerica vs europe sales", xlab="NorthAmerica sales", ylab="Europe sales")
+abline(lm(video.df$NA_Sales~video.df$EU_Sales))
+```
+
+#plotting northamerica, europe, japan, other sales vs global sales
+```{r}
+par(mfrow=c(1,4))
+with(video.df, plot(NA_Sales, Global_Sales))
+with(video.df, plot(EU_Sales, Global_Sales))
+with(video.df, plot(JP_Sales, Global_Sales))
+with(video.df, plot(Other_Sales, Global_Sales))
+par(mfrow=c(1,1))
+```
+
+#Creating correlation matrix for sales across different countries and overall sales
+```{r}
+cor(video.df[, c(7:11)])
+```
+
+#Visualizing correlation matrix using corrgram
+```{r}
+library(corrgram)
+corrgram(video.df, order=TRUE, lower.panel = panel.shade, upper.panel = panel.pie, text.panel = panel.txt, main="Correlation matrix using corrgram")
+```
+
+#Scatterplot matrix for sales in northamerica and europe
+```{r}
+library(car)
+scatterplotMatrix(formula = ~ NA_Sales + EU_Sales, cex=0.6, data=video.df, diagonal="histogram")
+```
+
+#Scatterplot matrix for sales in northamerica, europe, japan and others
+```{r}
+pairs(formula = ~ NA_Sales + EU_Sales + JP_Sales + Other_Sales, cex=0.6, data=video.df)
+```
+
+#Jitter to plot year wise global sales
+```{r}
+plot(jitter(video.df$NA_Sales), jitter(video.df$Global_Sales), xlab="North America Sales", ylab="Global sales", main="North America sales vs. global sales", col=c("red", "blue"))
+```
+
+#Test to check our hypothesis for suitable assumptions
+#Correlation test for northamerica sales vs european sales
+```{r}
+cor.test(video.df$NA_Sales, video.df$EU_Sales)
+```
+
+Since p-value is less than 0.05, they are independent variables
+
+#Correlation test for japan sales and other sales
+```{r}
+cor.test(video.df$JP_Sales, video.df$Other_Sales)
+```
+Since p-value is less than 0.05, they are independent variables
+
+#T-test to analyse the hypothesis
+#Hypothesis : The sales in northamerica is greater than that of europe
+```{r}
+t.test(video.df$NA_Sales, video.df$EU_Sales)
+```
+Null hypothesis : Two means must be equal. So we reject the null hypothesis and since p-value is less than 0.05, the variables are statistically significant.
+
+#Hypothesis : The sales in japan is less than that of europe
+```{r}
+t.test(video.df$JP_Sales, video.df$EU_Sales)
+```
+Null hypothesis : Two means must be equal. So we reject the null hypothesis and since p-value is less than 0.05, the variables are statistically significant.
+
+#Formulating regression model
+#Model 1: Global sales vs. North America Sales
+```{r}
+fit <- lm(Global_Sales ~ NA_Sales, data=video.df)
+summary(fit)
+```
+From the above model,
+p-value = less than 0.001
+Multiple r-squared and adjusted r-squared = 0.8856
+
+#Model 2: Global sales vs. European sales
+```{r}
+fit <- lm(Global_Sales ~ EU_Sales, data=video.df)
+summary(fit)
+```
+From the above model, 
+p-value = less than 0.001
+Multiple r-squared and adjusted r-squared = 0.8151
+
+#Model 3: Global sales vs. Japan sales
+```{r}
+fit <- lm(Global_Sales ~ JP_Sales, data=video.df)
+summary(fit)
+```
+From the above model,
+p-value = less than 0.01
+Multiple r-squared and adjusted r-squared = 0.3743
+
+The best model is chosen based upon two conditions:
+1. The model must have lesser p-value than all.
+2. It must also have higher multiple r-squared or adjusted r-squared value.
+
+The model which satisfies the above two conditions is Model 3. Therefore, this is the best model of all.
+
+#To find beta-coefficients in a fitted model 
+#Model 1: Global sales vs. North America Sales
+```{r}
+fit <- lm(Global_Sales ~ NA_Sales, data=video.df)
+fit$coefficients
+```
+Global Sales(Y) = b0 + NorthAmerica Sales(b1)
+b0=-1, b1=1.7918
+Global Sales = -1 + NorthAmerica Sales*1.7918
+
+#Model 2: Global sales vs. European sales
+```{r}
+fit <- lm(Global_Sales ~ EU_Sales, data=video.df)
+fit$coefficients
+```
+Global Sales(Y) = b0 + European Sales(b1)
+b0=-1, b1=2.7781
+Global Sales = -1 + European Sales*2.7781
+
+#Model 3: Global sales vs. Japan sales
+```{r}
+fit <- lm(Global_Sales ~ JP_Sales, data=video.df)
+fit$coefficients
+```
+Global Sales(Y) = b0 + Japan Sales(b1)
+b0=-1, b1=3.0760
+Global Sales = -1 + Japan Sales*3.0760
+
+#Model 4: Global Sales vs. other sales
+```{r}
+fit <- lm(Global_Sales ~ Other_Sales + NA_Sales + EU_Sales + JP_Sales, data=video.df)
+fit$coefficients
+```
+Global Sales(Y) = b0 + Other Sales(b1) + NorthAmerica Sales(b2) + European Sales(b3) + Japan sales(b4)
+b0=-1, b1=0.9995, b2=0.99994, b3=0.99998, b4=0.99988
+Global Sales = -1 + Other Sales(0.9995) + NorthAmerica Sales(0.99994) + European Sales(0.99998) + Japan Sales(0.99988).
+
+#Fitted residuals and values  are checked and the deviation was around 1000. because of large data points it's not suitable to show those in the output file
+
+#Conclusion:
+From the above outputs, we have found out
+1. In which year the global sales was high,low.
+2. Comparisons between sales in northamerica, europe, japan and others
+3. Genre which had the highest and lowest global sales.
